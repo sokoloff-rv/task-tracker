@@ -1,59 +1,207 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Task Tracker API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+REST API для управления задачами с токен-аутентификацией на базе Laravel. Приложение позволяет регистрировать и авторизовывать пользователей, создавать и сопровождать задачи, прикреплять файлы к задачам и получать уведомления о создании задач по email.
 
-## About Laravel
+Работоспобная версия доступна по адресу https://task-tracker.sokoloff-rv.ru (только реальная отправка email не происходит, все письма падают в Mailtrap).
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Основные возможности
+- Регистрация и авторизация пользователей по токену (`Laravel Sanctum`).
+- CRUD для задач с фильтрацией по статусу, исполнителю и дате завершения.
+- Статусы задач: `planned`, `in_progress`, `done`.
+- Привязка автора и исполнителя задачи (пользователь).
+- Поддержка даты завершения и опционального вложения.
+- Загрузка файлов через `spatie/laravel-medialibrary` с выдачей ссылки в ответе.
+- Отправка email-уведомления после создания задачи (адрес исполнителя или автора).
+- Единообразные JSON-ответы и человекочитаемые сообщения о валидации.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Требования
+- PHP 8.2+
+- Composer
+- Node.js и npm (для сборки фронтенда при необходимости)
+- СУБД (MySQL/PostgreSQL/SQLite и т.д.)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Развертывание
+1. Клонируйте репозиторий и установите зависимости:
+   ```bash
+   composer install
+   npm install
+   ```
+2. Создайте файл окружения и сгенерируйте ключ приложения:
+   ```bash
+   cp .env.example .env
+   php artisan key:generate
+   ```
+3. Настройте подключение к базе данных и параметры почты в `.env`:
+   ```env
+   DB_CONNECTION=mysql
+   DB_HOST=127.0.0.1
+   DB_PORT=3306
+   DB_DATABASE=task_tracker
+   DB_USERNAME=root
+   DB_PASSWORD=secret
 
-## Learning Laravel
+   MAIL_MAILER=log   # Для локальной разработки: письма пишутся в логи
+   # MAIL_HOST=...    # Или настройте SMTP, если нужно отправлять письма
+   ```
+4. Выполните миграции и создайте симлинк на директорию файлов:
+   ```bash
+   php artisan migrate
+   php artisan storage:link
+   ```
+5. Соберите фронтенд (если требуется) и запустите сервер разработки:
+   ```bash
+   npm run build   # или npm run dev
+   php artisan serve
+   ```
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## Аутентификация
+Используется Laravel Sanctum. Полученный `token` необходимо передавать в заголовке `Authorization: Bearer <token>` для всех защищённых маршрутов.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### Регистрация
+`POST /api/registration`
 
-## Laravel Sponsors
+**Тело запроса**
+```json
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "password": "Password123!"
+}
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+**Ответ 201**
+```json
+{
+  "message": "Пользователь успешно зарегистрирован!",
+  "user": { /* данные пользователя */ },
+  "token": "<plain-text-token>"
+}
+```
 
-### Premium Partners
+### Логин
+`POST /api/login`
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+**Тело запроса**
+```json
+{
+  "email": "john@example.com",
+  "password": "Password123!"
+}
+```
 
-## Contributing
+**Ответ 200**
+```json
+{
+  "message": "Авторизация прошла успешно!",
+  "user": { /* данные пользователя */ },
+  "token": "<plain-text-token>"
+}
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Задачи
+Все маршруты `/api/tasks` защищены Sanctum. В ответах задачи возвращаются вместе с автором, исполнителем и ссылкой на вложение (если оно есть) в поле `attachment_url`.
 
-## Code of Conduct
+### Получение списка задач
+`GET /api/tasks`
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Параметры фильтрации (все необязательны):
+- `status` — один из `planned`, `in_progress`, `done`;
+- `assignee_id` — ID исполнителя;
+- `due_date` — дата завершения в формате `YYYY-MM-DD`.
 
-## Security Vulnerabilities
+**Ответ 200**
+```json
+{
+  "message": "Список из <N> задач успешно получен!",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "...",
+      "status": "planned",
+      "due_date": "2025-11-30",
+      "assignee": { /* пользователь */ },
+      "author": { /* пользователь */ },
+      "attachment_url": "http://.../storage/..."
+    }
+  ]
+}
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### Создание задачи
+`POST /api/tasks`
 
-## License
+- Тело передаётся в формате `multipart/form-data` при загрузке файлов (ключ `attachment`).
+- При успешном создании отправляется email исполнителю (`assignee`) или автору, если исполнитель не указан.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+**Поля**
+- `title` (string, required, max 255)
+- `description` (string, required)
+- `status` (enum, required: `planned`|`in_progress`|`done`)
+- `due_date` (date, optional)
+- `assignee_id` (integer, optional, существующий пользователь)
+- `attachment` (file, optional, до 10 МБ)
+
+**Ответ 201**
+```json
+{
+  "message": "Задача успешно создана!",
+  "task": { /* данные задачи */ },
+  "attachment_url": "http://.../storage/..." // null, если файла нет
+}
+```
+
+### Просмотр задачи
+`GET /api/tasks/{id}`
+
+**Ответ 200**
+```json
+{
+  "message": "Задача успешно получена!",
+  "task": { /* данные задачи */ },
+  "attachment_url": "http://.../storage/..."
+}
+```
+
+### Обновление задачи
+`PUT /api/tasks/{id}`
+
+Поддерживает частичное обновление. Поля аналогичны созданию, но все опциональны. Вложение можно передать заново в `attachment` — оно заменит существующее.
+
+**Ответ 200**
+```json
+{
+  "message": "Задача успешно обновлена!",
+  "task": { /* обновлённая задача */ },
+  "attachment_url": "http://.../storage/..."
+}
+```
+
+### Удаление задачи
+`DELETE /api/tasks/{id}`
+
+**Ответ 200**
+```json
+{
+  "message": "Задача успешно удалена!"
+}
+```
+
+## Валидация и ошибки
+При ошибках валидации API возвращает код `422` и список ошибок:
+```json
+{
+  "message": "Ошибка валидации данных!",
+  "errors": {
+    "field": ["Сообщение об ошибке"]
+  }
+}
+```
+При неверных учетных данных для логина возвращается `401` с сообщением `"Неверный email или пароль!"`.
+
+## Работа с вложениями
+- Загрузка и хранение реализованы через пакет `spatie/laravel-medialibrary` (локальное хранилище по умолчанию).
+- Используйте `php artisan storage:link` для доступа к файлам через публичный URL.
+- В ответах API ссылка на вложение доступна в поле `attachment_url`; `null`, если файл отсутствует.
+
+## Отправка почты
+После создания задачи отправляется письмо на email исполнителя. Если исполнитель не указан, письмо получает автор задачи.
