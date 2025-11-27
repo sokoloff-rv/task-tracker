@@ -15,11 +15,44 @@ class TaskStoreRequest extends FormRequest
     {
         return [
             'title' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-            'status' => ['nullable', 'in:planned,in_progress,done'],
+            'description' => ['required', 'string'],
+            'status' => ['required', 'in:planned,in_progress,done'],
             'due_date' => ['nullable', 'date'],
-            'assignee_id' => ['nullable', 'exists:users,id'],
+            'assignee_id' => ['required', 'exists:users,id'],
             'attachment' => ['nullable', 'file', 'max:10240'],
         ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'title.required' => 'Заголовок задачи обязателен для заполнения!',
+            'title.string' => 'Заголовок задачи должен быть строкой!',
+            'title.max' => 'Заголовок задачи не может превышать 255 символов!',
+
+            'description.required' => 'Описание задачи обязательно для заполнения!',
+            'description.string' => 'Описание задачи должно быть строкой!',
+
+            'status.required' => 'Статус задачи обязателен для заполнения!',
+            'status.in' => 'Статус задачи должен быть одним из следующих: planned, in_progress, done!',
+
+            'due_date.date' => 'Дата завершения должна быть корректной!',
+
+            'assignee_id.required' => 'Исполнитель обязателен для выбора!',
+            'assignee_id.exists' => 'Указанный исполнитель не найден!',
+
+            'attachment.file' => 'Вложение должно быть файлом!',
+            'attachment.max' => 'Размер вложения не может превышать 10 МБ!',
+        ];
+    }
+
+    protected function failedValidation(\Illuminate\Contracts\Validation\Validator $validator)
+    {
+        $response = response()->json([
+            'message' => 'Ошибка валидации данных.',
+            'errors'  => $validator->errors(),
+        ], 422);
+
+        throw new \Illuminate\Validation\ValidationException($validator, $response);
     }
 }
