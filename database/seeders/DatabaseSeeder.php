@@ -4,8 +4,8 @@ namespace Database\Seeders;
 
 use App\Models\Task;
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
 class DatabaseSeeder extends Seeder
 {
@@ -13,36 +13,28 @@ class DatabaseSeeder extends Seeder
 
     public function run(): void
     {
-        $author = User::firstOrCreate(
-            ['email' => 'demouser@example.com'],
-            [
-                'name' => 'Demouser',
-                'password' => 'demouser',
-            ],
-        );
+        $usersData = [
+            ['email' => 'demouser@example.com',  'name' => 'Demouser',  'password' => 'demouser'],
+            ['email' => 'manager@example.com',   'name' => 'Manager',   'password' => 'password'],
+            ['email' => 'developer@example.com', 'name' => 'Developer', 'password' => 'password'],
+        ];
 
-        $assignees = collect([
-            User::firstOrCreate(
-                ['email' => 'manager@example.com'],
+        $users = collect($usersData)
+            ->map(fn($data) => User::firstOrCreate(
+                ['email' => $data['email']],
                 [
-                    'name' => 'Manager',
-                    'password' => 'password',
-                ],
-            ),
-            User::firstOrCreate(
-                ['email' => 'developer@example.com'],
-                [
-                    'name' => 'Developer',
-                    'password' => 'password',
-                ],
-            ),
-        ]);
+                    'name' => $data['name'],
+                    'password' => bcrypt($data['password']),
+                ]
+            ));
+
+        $author = $users->first();
 
         Task::factory()
             ->count(30)
             ->for($author, 'author')
             ->state(fn() => [
-                'assignee_id' => $assignees->random()->id,
+                'assignee_id' => $users->random()->id,
             ])
             ->create();
     }
