@@ -2,21 +2,17 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Models\Task;
+use Illuminate\Validation\Rule;
 
-class TaskStoreRequest extends FormRequest
+class TaskStoreRequest extends ApiRequest
 {
-    public function authorize(): bool
-    {
-        return true;
-    }
-
     public function rules(): array
     {
         return [
             'title' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string'],
-            'status' => ['required', 'in:planned,in_progress,done'],
+            'status' => ['required', Rule::in(Task::availableStatuses())],
             'due_date' => ['nullable', 'date'],
             'assignee_id' => ['nullable', 'exists:users,id'],
             'attachment' => ['nullable', 'file', 'max:10240'],
@@ -34,7 +30,10 @@ class TaskStoreRequest extends FormRequest
             'description.string' => 'Описание задачи должно быть строкой!',
 
             'status.required' => 'Статус задачи обязателен для заполнения!',
-            'status.in' => 'Статус задачи должен быть одним из следующих: planned, in_progress, done!',
+            'status.in' => sprintf(
+                'Статус задачи должен быть одним из следующих: %s!',
+                implode(', ', Task::availableStatuses())
+            ),
 
             'due_date.date' => 'Дата завершения должна быть корректной!',
 
@@ -43,15 +42,5 @@ class TaskStoreRequest extends FormRequest
             'attachment.file' => 'Вложение должно быть файлом!',
             'attachment.max' => 'Размер вложения не может превышать 10 МБ!',
         ];
-    }
-
-    protected function failedValidation(\Illuminate\Contracts\Validation\Validator $validator)
-    {
-        $response = response()->json([
-            'message' => 'Ошибка валидации данных!',
-            'errors'  => $validator->errors(),
-        ], 422);
-
-        throw new \Illuminate\Validation\ValidationException($validator, $response);
     }
 }

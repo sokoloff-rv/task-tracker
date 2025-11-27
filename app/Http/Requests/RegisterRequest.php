@@ -1,17 +1,10 @@
 <?php
 
 namespace App\Http\Requests;
-
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Password;
 
-class RegisterRequest extends FormRequest
+class RegisterRequest extends ApiRequest
 {
-    public function authorize(): bool
-    {
-        return true;
-    }
-
     public function rules(): array
     {
         return [
@@ -44,15 +37,5 @@ class RegisterRequest extends FormRequest
             'password.symbols' => 'Пароль должен содержать хотя бы один специальный символ!',
             'password.uncompromised' => 'Этот пароль небезопасен — он был найден в утечках данных. Выберите другой!',
         ];
-    }
-
-    protected function failedValidation(\Illuminate\Contracts\Validation\Validator $validator)
-    {
-        $response = response()->json([
-            'message' => 'Ошибка валидации данных!',
-            'errors'  => $validator->errors(),
-        ], 422);
-
-        throw new \Illuminate\Validation\ValidationException($validator, $response);
     }
 }

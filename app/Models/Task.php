@@ -16,6 +16,15 @@ class Task extends Model implements HasMedia
     public const STATUS_IN_PROGRESS = 'in_progress';
     public const STATUS_DONE = 'done';
 
+    public static function availableStatuses(): array
+    {
+        return [
+            self::STATUS_PLANNED,
+            self::STATUS_IN_PROGRESS,
+            self::STATUS_DONE,
+        ];
+    }
+
     protected $fillable = [
         'title',
         'description',

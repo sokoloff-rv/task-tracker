@@ -8,10 +8,15 @@ use App\Http\Requests\TaskStoreRequest;
 use App\Http\Requests\TaskUpdateRequest;
 use App\Mail\TaskCreatedMail;
 use App\Models\Task;
+use App\Services\TaskAttachmentService;
 use Illuminate\Support\Facades\Mail;
 
 class TaskController extends Controller
 {
+    public function __construct(private readonly TaskAttachmentService $attachmentService)
+    {
+    }
+
     public function index(TaskIndexRequest $request)
     {
         $filters = $request->validated();
@@ -23,9 +28,7 @@ class TaskController extends Controller
             ->get();
 
         $tasks->transform(function (Task $task) {
-            $task->setAttribute('attachment_url', $this->getAttachmentUrl($task));
-
-            return $task;
+            return $this->attachmentService->appendAttachmentUrl($task);
         });
 
         return response()->json([
@@ -49,7 +52,7 @@ class TaskController extends Controller
 
         $attachmentUrl = null;
 
-        $attachmentUrl = $this->syncAttachment($request, $task);
+        $attachmentUrl = $this->attachmentService->syncAttachment($request, $task);
 
         $recipient = $task->assignee ?? $request->user();
 
@@ -69,7 +72,7 @@ class TaskController extends Controller
         return response()->json([
             'message' => 'Задача успешно получена!',
             'task' => $task->load(['assignee', 'author']),
-            'attachment_url' => $this->getAttachmentUrl($task),
+            'attachment_url' => $this->attachmentService->getAttachmentUrl($task),
         ]);
     }
 
@@ -85,7 +88,7 @@ class TaskController extends Controller
             'assignee_id' => $data['assignee_id'] ?? $task->assignee_id,
         ]);
 
-        $attachmentUrl = $this->syncAttachment($request, $task);
+        $attachmentUrl = $this->attachmentService->syncAttachment($request, $task);
 
         return response()->json([
             'message' => 'Задача успешно обновлена!',
@@ -101,25 +104,5 @@ class TaskController extends Controller
         return response()->json([
             'message' => 'Задача успешно удалена!',
         ]);
-    }
-
-    private function syncAttachment($request, Task $task): ?string
-    {
-        if ($request->hasFile('attachment')) {
-            $media = $task
-                ->addMediaFromRequest('attachment')
-                ->toMediaCollection('attachment');
-
-            return $media->getUrl();
-        }
-
-        return $this->getAttachmentUrl($task);
-    }
-
-    private function getAttachmentUrl(Task $task): ?string
-    {
-        $media = $task->getFirstMedia('attachment');
-
-        return $media?->getUrl();
     }
 }
