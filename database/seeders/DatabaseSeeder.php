@@ -13,17 +13,37 @@ class DatabaseSeeder extends Seeder
 
     public function run(): void
     {
-        $user = User::firstOrCreate(
+        $author = User::firstOrCreate(
             ['email' => 'demouser@example.com'],
             [
-                'name' => 'demouser',
+                'name' => 'Demouser',
                 'password' => 'demouser',
             ],
         );
 
+        $assignees = collect([
+            User::firstOrCreate(
+                ['email' => 'manager@example.com'],
+                [
+                    'name' => 'Manager',
+                    'password' => 'password',
+                ],
+            ),
+            User::firstOrCreate(
+                ['email' => 'developer@example.com'],
+                [
+                    'name' => 'Developer',
+                    'password' => 'password',
+                ],
+            ),
+        ]);
+
         Task::factory()
-            ->count(10)
-            ->for($user, 'assignee')
+            ->count(30)
+            ->for($author, 'author')
+            ->state(fn() => [
+                'assignee_id' => $assignees->random()->id,
+            ])
             ->create();
     }
 }

@@ -16,7 +16,7 @@ class TaskController extends Controller
     {
         $filters = $request->validated();
 
-        $tasks = Task::with('assignee')
+        $tasks = Task::with(['assignee', 'author'])
             ->when(isset($filters['status']), fn($query) => $query->where('status', $filters['status']))
             ->when(isset($filters['assignee_id']), fn($query) => $query->where('assignee_id', $filters['assignee_id']))
             ->when(isset($filters['due_date']), fn($query) => $query->whereDate('due_date', $filters['due_date']))
@@ -29,7 +29,7 @@ class TaskController extends Controller
         });
 
         return response()->json([
-            'message' => 'Список задач успешно получен!',
+            'message' => "Список из {$tasks->count()} задач успешно получен!",
             'tasks' => $tasks,
         ]);
     }
@@ -43,7 +43,8 @@ class TaskController extends Controller
             'description' => $data['description'] ?? null,
             'status' => $data['status'] ?? Task::STATUS_PLANNED,
             'due_date' => $data['due_date'] ?? null,
-            'assignee_id' => $request->user()->id,
+            'author_id' => $request->user()->id,
+            'assignee_id' => $data['assignee_id'] ?? null,
         ]);
 
         $attachmentUrl = null;
@@ -58,7 +59,7 @@ class TaskController extends Controller
 
         return response()->json([
             'message' => 'Задача успешно создана!',
-            'task' => $task->load('assignee'),
+            'task' => $task->load(['assignee', 'author']),
             'attachment_url' => $attachmentUrl,
         ], 201);
     }
@@ -67,7 +68,7 @@ class TaskController extends Controller
     {
         return response()->json([
             'message' => 'Задача успешно получена!',
-            'task' => $task->load('assignee'),
+            'task' => $task->load(['assignee', 'author']),
             'attachment_url' => $this->getAttachmentUrl($task),
         ]);
     }
@@ -88,7 +89,7 @@ class TaskController extends Controller
 
         return response()->json([
             'message' => 'Задача успешно обновлена!',
-            'task' => $task->load('assignee'),
+            'task' => $task->load(['assignee', 'author']),
             'attachment_url' => $attachmentUrl,
         ]);
     }

@@ -24,7 +24,8 @@ class TaskFactory extends Factory
                 Task::STATUS_DONE,
             ]),
             'due_date' => fake()->optional()->dateTimeBetween('now', '+1 month'),
-            'assignee_id' => User::factory(),
+            'author_id' => User::factory(),
+            'assignee_id' => null,
         ];
     }
 }

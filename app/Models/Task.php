@@ -21,6 +21,7 @@ class Task extends Model implements HasMedia
         'description',
         'status',
         'due_date',
+        'author_id',
         'assignee_id',
     ];
 
@@ -31,6 +32,11 @@ class Task extends Model implements HasMedia
     public function assignee()
     {
         return $this->belongsTo(User::class, 'assignee_id');
+    }
+
+    public function author()
+    {
+        return $this->belongsTo(User::class, 'author_id');
     }
 
     public function registerMediaCollections(): void
