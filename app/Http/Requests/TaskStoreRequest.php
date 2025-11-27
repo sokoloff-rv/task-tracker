@@ -18,7 +18,6 @@ class TaskStoreRequest extends FormRequest
             'description' => ['required', 'string'],
             'status' => ['required', 'in:planned,in_progress,done'],
             'due_date' => ['nullable', 'date'],
-            'assignee_id' => ['required', 'exists:users,id'],
             'attachment' => ['nullable', 'file', 'max:10240'],
         ];
     }
@@ -37,9 +36,6 @@ class TaskStoreRequest extends FormRequest
             'status.in' => 'Статус задачи должен быть одним из следующих: planned, in_progress, done!',
 
             'due_date.date' => 'Дата завершения должна быть корректной!',
-
-            'assignee_id.required' => 'Исполнитель обязателен для выбора!',
-            'assignee_id.exists' => 'Указанный исполнитель не найден!',
 
             'attachment.file' => 'Вложение должно быть файлом!',
             'attachment.max' => 'Размер вложения не может превышать 10 МБ!',

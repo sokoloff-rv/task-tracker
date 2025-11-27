@@ -19,7 +19,7 @@ class TaskController extends Controller
             'description' => $data['description'] ?? null,
             'status' => $data['status'] ?? Task::STATUS_PLANNED,
             'due_date' => $data['due_date'] ?? null,
-            'assignee_id' => $data['assignee_id'] ?? null,
+            'assignee_id' => $request->user()->id,
         ]);
 
         $attachmentUrl = null;
