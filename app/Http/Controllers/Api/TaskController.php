@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\TaskIndexRequest;
 use App\Http\Requests\TaskStoreRequest;
 use App\Http\Requests\TaskUpdateRequest;
 use App\Mail\TaskCreatedMail;
@@ -11,6 +12,28 @@ use Illuminate\Support\Facades\Mail;
 
 class TaskController extends Controller
 {
+    public function index(TaskIndexRequest $request)
+    {
+        $filters = $request->validated();
+
+        $tasks = Task::with('assignee')
+            ->when(isset($filters['status']), fn($query) => $query->where('status', $filters['status']))
+            ->when(isset($filters['assignee_id']), fn($query) => $query->where('assignee_id', $filters['assignee_id']))
+            ->when(isset($filters['due_date']), fn($query) => $query->whereDate('due_date', $filters['due_date']))
+            ->get();
+
+        $tasks->transform(function (Task $task) {
+            $task->setAttribute('attachment_url', $this->getAttachmentUrl($task));
+
+            return $task;
+        });
+
+        return response()->json([
+            'message' => 'Список задач успешно получен!',
+            'tasks' => $tasks,
+        ]);
+    }
+
     public function store(TaskStoreRequest $request)
     {
         $data = $request->validated();
