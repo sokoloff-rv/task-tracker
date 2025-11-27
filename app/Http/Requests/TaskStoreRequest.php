@@ -49,7 +49,7 @@ class TaskStoreRequest extends FormRequest
     protected function failedValidation(\Illuminate\Contracts\Validation\Validator $validator)
     {
         $response = response()->json([
-            'message' => 'Ошибка валидации данных.',
+            'message' => 'Ошибка валидации данных!',
             'errors'  => $validator->errors(),
         ], 422);
 
